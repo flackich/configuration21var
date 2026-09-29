@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -14,11 +15,18 @@ public:
     void run();
 
 private:
+    enum class CommandResult {
+        Success,
+        Error,
+        Exit
+    };
+
     std::string username_;
     std::string hostname_;
     VirtualFileSystem vfs_;
+    std::chrono::steady_clock::time_point startedAt_;
 
     std::vector<std::string> parseCommand(const std::string& input) const;
-    bool execute(const std::vector<std::string>& args, bool& errorOccurred);
+    CommandResult execute(const std::vector<std::string>& args);
     std::string prompt() const;
 };

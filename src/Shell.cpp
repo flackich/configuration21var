@@ -2,12 +2,14 @@
 
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
 
 Shell::Shell(std::string username, std::string hostname)
     : username_(std::move(username)),
-      hostname_(std::move(hostname)) {}
+      hostname_(std::move(hostname)),
+      startedAt_(std::chrono::steady_clock::now()) {}
 
 bool Shell::loadVfs(const std::string& path) {
     std::string error;
@@ -20,7 +22,9 @@ bool Shell::loadVfs(const std::string& path) {
     return true;
 }
 
-std::vector<std::string> Shell::parseCommand(const std::string& input) const {
+std::vector<std::string> Shell::parseCommand(
+    const std::string& input) const {
+
     std::vector<std::string> result;
     std::string current;
     bool inQuotes = false;
@@ -50,15 +54,21 @@ std::vector<std::string> Shell::parseCommand(const std::string& input) const {
 }
 
 std::string Shell::prompt() const {
-    return username_ + "@" + hostname_ + ":~$ ";
+    const std::string path = vfs_.currentPath();
+    std::string shown = "~";
+
+    if (path != "/") {
+        shown += path;
+    }
+
+    return username_ + "@" + hostname_ + ":" + shown + "$ ";
 }
 
-bool Shell::execute(const std::vector<std::string>& args,
-                    bool& errorOccurred) {
-    errorOccurred = false;
+Shell::CommandResult Shell::execute(
+    const std::vector<std::string>& args) {
 
     if (args.empty()) {
-        return true;
+        return CommandResult::Success;
     }
 
     const std::string& command = args[0];
@@ -67,56 +77,146 @@ bool Shell::execute(const std::vector<std::string>& args,
     if (command == "exit") {
         if (args.size() != 1) {
             std::cerr << "Ошибка: exit не принимает аргументы\n";
-            errorOccurred = true;
-            return true;
+            return CommandResult::Error;
         }
-        return false;
+
+        return CommandResult::Exit;
+    }
+
+    if (command == "whoami") {
+        if (args.size() != 1) {
+            std::cerr << "Ошибка: whoami не принимает аргументы\n";
+            return CommandResult::Error;
+        }
+
+        std::cout << username_ << '\n';
+        return CommandResult::Success;
+    }
+
+    if (command == "uptime") {
+        if (args.size() != 1) {
+            std::cerr << "Ошибка: uptime не принимает аргументы\n";
+            return CommandResult::Error;
+        }
+
+        const auto now = std::chrono::steady_clock::now();
+        const auto seconds =
+            std::chrono::duration_cast<std::chrono::seconds>(
+                now - startedAt_).count();
+
+        std::cout << "Эмулятор работает "
+                  << seconds << " сек.\n";
+
+        return CommandResult::Success;
     }
 
     if (command == "ls") {
         if (args.size() > 2) {
-            std::cerr << "Ошибка: ls принимает не более одного аргумента\n";
-            errorOccurred = true;
-        } else {
-            std::cout << "ls: команда-заглушка\n";
+            std::cerr
+                << "Ошибка: ls принимает не более одного пути\n";
+            return CommandResult::Error;
         }
-        return true;
+
+        const auto entries =
+            vfs_.list(args.size() == 2 ? args[1] : ".", error);
+
+        if (!error.empty()) {
+            std::cerr << "Ошибка: " << error << '\n';
+            return CommandResult::Error;
+        }
+
+        for (const auto& entry : entries) {
+            std::cout << entry << '\n';
+        }
+
+        return CommandResult::Success;
     }
 
     if (command == "cd") {
         if (args.size() != 2) {
-            std::cerr << "Ошибка: cd требует один аргумент\n";
-            errorOccurred = true;
-        } else {
-            std::cout << "cd: команда-заглушка\n";
+            std::cerr << "Ошибка: cd требует один путь\n";
+            return CommandResult::Error;
         }
-        return true;
+
+        if (!vfs_.changeDirectory(args[1], error)) {
+            std::cerr << "Ошибка: " << error << '\n';
+            return CommandResult::Error;
+        }
+
+        return CommandResult::Success;
+    }
+
+    if (command == "wc") {
+        if (args.size() != 2) {
+            std::cerr << "Ошибка: wc требует имя файла\n";
+            return CommandResult::Error;
+        }
+
+        std::string content;
+
+        if (!vfs_.readFile(args[1], content, error)) {
+            std::cerr << "Ошибка: " << error << '\n';
+            return CommandResult::Error;
+        }
+
+        std::istringstream stream(content);
+        std::size_t words = 0;
+        std::string word;
+
+        while (stream >> word) {
+            ++words;
+        }
+
+        std::size_t lines = 0;
+
+        for (char symbol : content) {
+            if (symbol == '\n') {
+                ++lines;
+            }
+        }
+
+        if (!content.empty() && content.back() != '\n') {
+            ++lines;
+        }
+
+        std::cout << lines << ' '
+                  << words << ' '
+                  << content.size() << ' '
+                  << args[1] << '\n';
+
+        return CommandResult::Success;
     }
 
     if (command == "vfs-save") {
         if (args.size() != 2) {
             std::cerr << "Ошибка: vfs-save требует путь\n";
-            errorOccurred = true;
-        } else if (!vfs_.save(args[1], error)) {
-            std::cerr << "Ошибка сохранения VFS: " << error << '\n';
-            errorOccurred = true;
-        } else {
-            std::cout << "VFS сохранена: " << args[1] << '\n';
+            return CommandResult::Error;
         }
-        return true;
+
+        if (!vfs_.save(args[1], error)) {
+            std::cerr
+                << "Ошибка сохранения VFS: "
+                << error << '\n';
+            return CommandResult::Error;
+        }
+
+        std::cout << "VFS сохранена: " << args[1] << '\n';
+        return CommandResult::Success;
     }
 
-    std::cerr << "Ошибка: неизвестная команда: " << command << '\n';
-    errorOccurred = true;
-    return true;
+    std::cerr
+        << "Ошибка: неизвестная команда: "
+        << command << '\n';
+
+    return CommandResult::Error;
 }
 
 bool Shell::runScript(const std::string& path) {
     std::ifstream file(path);
 
     if (!file) {
-        std::cerr << "Ошибка: не удалось открыть стартовый скрипт: "
-                  << path << '\n';
+        std::cerr
+            << "Ошибка: не удалось открыть стартовый скрипт\n";
         return false;
     }
 
@@ -131,20 +231,22 @@ bool Shell::runScript(const std::string& path) {
 
         try {
             const auto args = parseCommand(line);
-            bool errorOccurred = false;
-            const bool keepRunning = execute(args, errorOccurred);
+            const CommandResult result = execute(args);
 
-            if (errorOccurred) {
+            if (result == CommandResult::Error) {
                 std::cerr
-                    << "Ошибка: выполнение стартового скрипта остановлено\n";
+                    << "Ошибка: выполнение стартового "
+                    << "скрипта остановлено\n";
                 return false;
             }
 
-            if (!keepRunning) {
+            if (result == CommandResult::Exit) {
                 return true;
             }
         } catch (const std::exception& error) {
-            std::cerr << "Ошибка скрипта: " << error.what() << '\n';
+            std::cerr
+                << "Ошибка скрипта: "
+                << error.what() << '\n';
             return false;
         }
     }
@@ -165,13 +267,15 @@ void Shell::run() {
 
         try {
             const auto args = parseCommand(input);
-            bool errorOccurred = false;
+            const CommandResult result = execute(args);
 
-            if (!execute(args, errorOccurred)) {
+            if (result == CommandResult::Exit) {
                 break;
             }
         } catch (const std::exception& error) {
-            std::cerr << "Ошибка: " << error.what() << '\n';
+            std::cerr
+                << "Ошибка: "
+                << error.what() << '\n';
         }
     }
 }

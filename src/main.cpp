@@ -2,21 +2,19 @@
 #include <iostream>
 #include <string>
 
+#include "Shell.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <unistd.h>
 #endif
 
-#include "Shell.h"
-
 std::string getUsername() {
-    const char* user = std::getenv("USER");
-
 #ifdef _WIN32
-    if (user == nullptr) {
-        user = std::getenv("USERNAME");
-    }
+    const char* user = std::getenv("USERNAME");
+#else
+    const char* user = std::getenv("USER");
 #endif
 
     return user == nullptr ? "user" : std::string(user);
@@ -27,16 +25,19 @@ std::string getHostname() {
 
 #ifdef _WIN32
     DWORD size = sizeof(hostname);
+
     if (GetComputerNameA(hostname, &size)) {
         return hostname;
     }
+
+    return "windows";
 #else
     if (gethostname(hostname, sizeof(hostname)) == 0) {
         return hostname;
     }
-#endif
 
-    return "computer";
+    return "unix";
+#endif
 }
 
 int main(int argc, char* argv[]) {
@@ -58,8 +59,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "Конфигурация эмулятора:\n";
-    std::cout << "VFS: "
-              << (vfsPath.empty() ? "не задана" : vfsPath) << '\n';
+    std::cout << "VFS: " << (vfsPath.empty() ? "встроенная" : vfsPath) << '\n';
     std::cout << "Стартовый скрипт: "
               << (scriptPath.empty() ? "не задан" : scriptPath) << "\n\n";
 
