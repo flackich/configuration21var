@@ -3,7 +3,7 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic
 TARGET = build/emulator
 SOURCES = src/main.cpp src/Shell.cpp
 
-.PHONY: all run clean
+.PHONY: all run test clean
 
 all: $(TARGET)
 
@@ -13,6 +13,9 @@ $(TARGET): $(SOURCES)
 
 run: all
 	./$(TARGET)
+
+test: all
+	./tests/test_config.sh
 
 clean:
 	rm -rf build

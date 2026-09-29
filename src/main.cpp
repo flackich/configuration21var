@@ -39,8 +39,36 @@ std::string getHostname() {
     return "computer";
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    std::string vfsPath;
+    std::string scriptPath;
+
+    for (int i = 1; i < argc; ++i) {
+        const std::string argument = argv[i];
+
+        if (argument == "--vfs" && i + 1 < argc) {
+            vfsPath = argv[++i];
+        } else if (argument == "--script" && i + 1 < argc) {
+            scriptPath = argv[++i];
+        } else {
+            std::cerr << "Ошибка: неизвестный или неполный параметр: "
+                      << argument << '\n';
+            return 1;
+        }
+    }
+
+    std::cout << "Конфигурация эмулятора:\n";
+    std::cout << "VFS: "
+              << (vfsPath.empty() ? "не задана" : vfsPath) << '\n';
+    std::cout << "Стартовый скрипт: "
+              << (scriptPath.empty() ? "не задан" : scriptPath) << "\n\n";
+
     Shell shell(getUsername(), getHostname());
+
+    if (!scriptPath.empty() && !shell.runScript(scriptPath)) {
+        return 1;
+    }
+
     shell.run();
     return 0;
 }

@@ -1,5 +1,6 @@
 #include "Shell.h"
 
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <utility>
@@ -41,7 +42,10 @@ std::string Shell::prompt() const {
     return username_ + "@" + hostname_ + ":~$ ";
 }
 
-bool Shell::execute(const std::vector<std::string>& args) {
+bool Shell::execute(const std::vector<std::string>& args,
+                    bool& errorOccurred) {
+    errorOccurred = false;
+
     if (args.empty()) {
         return true;
     }
@@ -51,6 +55,7 @@ bool Shell::execute(const std::vector<std::string>& args) {
     if (command == "exit") {
         if (args.size() != 1) {
             std::cerr << "Ошибка: exit не принимает аргументы\n";
+            errorOccurred = true;
             return true;
         }
         return false;
@@ -59,6 +64,7 @@ bool Shell::execute(const std::vector<std::string>& args) {
     if (command == "ls") {
         if (args.size() > 2) {
             std::cerr << "Ошибка: ls принимает не более одного аргумента\n";
+            errorOccurred = true;
         } else {
             std::cout << "ls: команда-заглушка\n";
         }
@@ -68,6 +74,7 @@ bool Shell::execute(const std::vector<std::string>& args) {
     if (command == "cd") {
         if (args.size() != 2) {
             std::cerr << "Ошибка: cd требует один аргумент\n";
+            errorOccurred = true;
         } else {
             std::cout << "cd: команда-заглушка\n";
         }
@@ -75,6 +82,48 @@ bool Shell::execute(const std::vector<std::string>& args) {
     }
 
     std::cerr << "Ошибка: неизвестная команда: " << command << '\n';
+    errorOccurred = true;
+    return true;
+}
+
+bool Shell::runScript(const std::string& path) {
+    std::ifstream file(path);
+
+    if (!file) {
+        std::cerr << "Ошибка: не удалось открыть стартовый скрипт: "
+                  << path << '\n';
+        return false;
+    }
+
+    std::string line;
+
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
+
+        std::cout << prompt() << line << '\n';
+
+        try {
+            const auto args = parseCommand(line);
+            bool errorOccurred = false;
+            const bool keepRunning = execute(args, errorOccurred);
+
+            if (errorOccurred) {
+                std::cerr
+                    << "Ошибка: выполнение стартового скрипта остановлено\n";
+                return false;
+            }
+
+            if (!keepRunning) {
+                return true;
+            }
+        } catch (const std::exception& error) {
+            std::cerr << "Ошибка скрипта: " << error.what() << '\n';
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -91,7 +140,9 @@ void Shell::run() {
 
         try {
             const auto args = parseCommand(input);
-            if (!execute(args)) {
+            bool errorOccurred = false;
+
+            if (!execute(args, errorOccurred)) {
                 break;
             }
         } catch (const std::exception& error) {
