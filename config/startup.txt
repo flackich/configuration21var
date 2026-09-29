@@ -1,4 +1,13 @@
-# Стартовый скрипт этапа 2
+# Проверка команд варианта 21
+whoami
+uptime
 ls
 cd Documents
 ls
+cd study
+wc info.txt
+cd ../..
+mkdir test_folder
+ls
+chown student test_folder
+vfs-save vfs_saved.json

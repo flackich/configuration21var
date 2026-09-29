@@ -187,6 +187,35 @@ Shell::CommandResult Shell::execute(
         return CommandResult::Success;
     }
 
+    if (command == "mkdir") {
+        if (args.size() != 2) {
+            std::cerr << "Ошибка: mkdir требует имя каталога\n";
+            return CommandResult::Error;
+        }
+
+        if (!vfs_.makeDirectory(args[1], error)) {
+            std::cerr << "Ошибка: " << error << '\n';
+            return CommandResult::Error;
+        }
+
+        return CommandResult::Success;
+    }
+
+    if (command == "chown") {
+        if (args.size() != 3) {
+            std::cerr
+                << "Ошибка: chown требует владельца и путь\n";
+            return CommandResult::Error;
+        }
+
+        if (!vfs_.changeOwner(args[1], args[2], error)) {
+            std::cerr << "Ошибка: " << error << '\n';
+            return CommandResult::Error;
+        }
+
+        return CommandResult::Success;
+    }
+
     if (command == "vfs-save") {
         if (args.size() != 2) {
             std::cerr << "Ошибка: vfs-save требует путь\n";
