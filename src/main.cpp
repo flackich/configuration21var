@@ -1,21 +1,43 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
-#include <unistd.h>
 
 #include "Shell.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
 std::string getUsername() {
+#ifdef _WIN32
+    const char* user = std::getenv("USERNAME");
+#else
     const char* user = std::getenv("USER");
+#endif
+
     return user == nullptr ? "user" : std::string(user);
 }
 
 std::string getHostname() {
     char hostname[256]{};
+
+#ifdef _WIN32
+    DWORD size = sizeof(hostname);
+
+    if (GetComputerNameA(hostname, &size)) {
+        return hostname;
+    }
+
+    return "windows";
+#else
     if (gethostname(hostname, sizeof(hostname)) == 0) {
         return hostname;
     }
-    return "mac";
+
+    return "unix";
+#endif
 }
 
 int main(int argc, char* argv[]) {
