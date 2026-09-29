@@ -1,7 +1,7 @@
 CXX = clang++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic
 TARGET = build/emulator
-SOURCES = src/main.cpp src/Shell.cpp
+SOURCES = src/main.cpp src/Shell.cpp src/VirtualFileSystem.cpp
 
 .PHONY: all run test clean
 
@@ -16,6 +16,7 @@ run: all
 
 test: all
 	./tests/test_config.sh
+	./tests/test_vfs.sh
 
 clean:
 	rm -rf build

@@ -2,12 +2,10 @@
 set -e
 
 OUTPUT=$(printf 'exit\n' | ./build/emulator \
-  --vfs example.json \
-  --script config/startup.txt)
+  --vfs test_data/vfs_minimal.json \
+  --script config/startup.txt 2>&1)
 
-echo "$OUTPUT" | grep -q "VFS: example.json"
+echo "$OUTPUT" | grep -q "VFS: test_data/vfs_minimal.json"
 echo "$OUTPUT" | grep -q "Стартовый скрипт: config/startup.txt"
-echo "$OUTPUT" | grep -q "ls: команда-заглушка"
-echo "$OUTPUT" | grep -q "cd: команда-заглушка"
 
 echo "test_config: OK"

@@ -9,6 +9,17 @@ Shell::Shell(std::string username, std::string hostname)
     : username_(std::move(username)),
       hostname_(std::move(hostname)) {}
 
+bool Shell::loadVfs(const std::string& path) {
+    std::string error;
+
+    if (!vfs_.load(path, error)) {
+        std::cerr << "Ошибка загрузки VFS: " << error << '\n';
+        return false;
+    }
+
+    return true;
+}
+
 std::vector<std::string> Shell::parseCommand(const std::string& input) const {
     std::vector<std::string> result;
     std::string current;
@@ -51,6 +62,7 @@ bool Shell::execute(const std::vector<std::string>& args,
     }
 
     const std::string& command = args[0];
+    std::string error;
 
     if (command == "exit") {
         if (args.size() != 1) {
@@ -77,6 +89,19 @@ bool Shell::execute(const std::vector<std::string>& args,
             errorOccurred = true;
         } else {
             std::cout << "cd: команда-заглушка\n";
+        }
+        return true;
+    }
+
+    if (command == "vfs-save") {
+        if (args.size() != 2) {
+            std::cerr << "Ошибка: vfs-save требует путь\n";
+            errorOccurred = true;
+        } else if (!vfs_.save(args[1], error)) {
+            std::cerr << "Ошибка сохранения VFS: " << error << '\n';
+            errorOccurred = true;
+        } else {
+            std::cout << "VFS сохранена: " << args[1] << '\n';
         }
         return true;
     }

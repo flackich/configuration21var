@@ -65,6 +65,10 @@ int main(int argc, char* argv[]) {
 
     Shell shell(getUsername(), getHostname());
 
+    if (!vfsPath.empty() && !shell.loadVfs(vfsPath)) {
+        return 1;
+    }
+
     if (!scriptPath.empty() && !shell.runScript(scriptPath)) {
         return 1;
     }
