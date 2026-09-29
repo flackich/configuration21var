@@ -1,0 +1,16 @@
+{
+  "type": "directory",
+  "owner": "root",
+  "children": {
+    "one.txt": {
+      "type": "file",
+      "owner": "user",
+      "content": "one\n"
+    },
+    "two.txt": {
+      "type": "file",
+      "owner": "user",
+      "content": "two words\n"
+    }
+  }
+}

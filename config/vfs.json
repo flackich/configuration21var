@@ -1,0 +1,23 @@
+{
+  "type": "directory",
+  "owner": "root",
+  "children": {
+    "Documents": {
+      "type": "directory",
+      "owner": "kai4me",
+      "children": {
+        "study": {
+          "type": "directory",
+          "owner": "kai4me",
+          "children": {
+            "info.txt": {
+              "type": "file",
+              "owner": "kai4me",
+              "content": "Configuration management\nVariant 21 emulator\n"
+            }
+          }
+        }
+      }
+    }
+  }
+}

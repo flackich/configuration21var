@@ -1,0 +1,5 @@
+build/
+vfs_saved.json
+.DS_Store
+.vscode/
+*.o
