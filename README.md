@@ -51,6 +51,13 @@ make
 make test
 ```
 
+Автоматические тесты проверяют:
+
+- основные команды эмулятора;
+- параметры командной строки и стартовый скрипт;
+- загрузку нескольких вариантов VFS;
+- остановку стартового скрипта при первой ошибке.
+
 ## Примеры
 
 ```text
@@ -67,17 +74,4 @@ user@Mac:~/Documents/study$ wc info.txt
 user@Mac:~$ mkdir new_folder
 user@Mac:~$ chown student new_folder
 user@Mac:~$ vfs-save vfs_saved.json
-```
-
-## Git
-
-Этапы работы рекомендуется фиксировать отдельными Conventional/Scoped
-Commits, например:
-
-```text
-feat(repl): implement shell REPL and parser
-feat(config): add command line configuration
-feat(vfs): implement virtual file system
-feat(commands): implement main shell commands
-feat(commands): add mkdir and chown
 ```

@@ -18,6 +18,7 @@ test: all
 	./tests/test_basic.sh
 	./tests/test_config.sh
 	./tests/test_vfs.sh
-
+	./tests/test_errors.sh
+	
 clean:
 	rm -rf build vfs_saved.json
